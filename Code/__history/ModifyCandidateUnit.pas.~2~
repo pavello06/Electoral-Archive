@@ -1,0 +1,291 @@
+Unit ModifyCandidateUnit;
+
+Interface
+
+Uses
+    Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
+    System.Classes, Vcl.Graphics,
+    Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Grids,
+    CandidateListUnit, PositiveNumberComponentUnit, NameComponentUnit;
+
+Type
+    TManageCandidateForm = Class(TForm)
+        TitleLabel: TLabel;
+
+        DistrictNumberLabel: TLabel;
+        DistrictNumberEdit: TEdit;
+        LastNameLabel: TLabel;
+        LastNameEdit: TEdit;
+        FirstNameLabel: TLabel;
+        FirstNameEdit: TEdit;
+        PatronymicLabel: TLabel;
+        PatronymicEdit: TEdit;
+        PartyLabel: TLabel;
+        PartyEdit: TEdit;
+        AgeLabel: TLabel;
+        AgeEdit: TEdit;
+        ProfessionLabel: TLabel;
+        ProfessionEdit: TEdit;
+        ManageButton: TButton;
+        CancelButton: TButton;
+
+        Procedure CreateParams(Var Params: TCreateParams); override;
+        Function FormHelp(Command: Word; Data: NativeInt; Var CallHelp: Boolean): Boolean;
+        Procedure FormKeyDown(Sender: TObject; Var Key: Word; Shift: TShiftState);
+        Procedure FormShow(Sender: TObject);
+
+        Procedure EditChange(Sender: TObject);
+        Procedure ControlKeyDown(Sender: TObject; Var Key: Word; Shift: TShiftState);
+
+        Procedure PositiveNumberEditContextPopup(Sender: TObject; MousePos: TPoint; Var Handled: Boolean);
+        Procedure PositiveNumberEditKeyDown(Sender: TObject; Var Key: Word; Shift: TShiftState);
+        Procedure PositiveNumberEditKeyPress(Sender: TObject; Var Key: Char);
+        Procedure PositiveNumberEditKeyUp(Sender: TObject; Var Key: Word; Shift: TShiftState);
+
+        Procedure NameEditContextPopup(Sender: TObject; MousePos: TPoint; Var Handled: Boolean);
+        Procedure NameEditKeyDown(Sender: TObject; Var Key: Word; Shift: TShiftState);
+        Procedure NameEditKeyPress(Sender: TObject; Var Key: Char);
+        Procedure NameEditKeyUp(Sender: TObject; Var Key: Word; Shift: TShiftState);
+
+        Procedure ManageButtonClick(Sender: TObject);
+        Procedure CancelButtonClick(Sender: TObject);
+
+    Private
+        { Private declarations }
+    Public
+        { Public declarations }
+    End;
+
+Var
+    ManageCandidateForm: TManageCandidateForm;
+
+Implementation
+
+{$R *.dfm}
+
+Uses
+    MenuUnit, ViewCandidateListUnit;
+
+Procedure SetCandidateData(CandidateListStringGrid: TStringGrid);
+Begin
+    With ManageCandidateForm, CandidateListStringGrid Do
+    Begin
+        DistrictNumberEdit.Text := Cells[0, Row];
+        LastNameEdit.Text := Cells[1, Row];
+        FirstNameEdit.Text := Cells[2, Row];
+        PatronymicEdit.Text := Cells[3, Row];
+        PartyEdit.Text := Cells[4, Row];
+        AgeEdit.Text := Cells[5, Row];
+        ProfessionEdit.Text := Cells[6, Row];
+    End;
+End;
+
+Function GetCandidateDataFromGrid(): TCandidateData;
+Var
+    CandidateData: TCandidateData;
+Begin
+    With CandidateData, ViewCandidateListForm.CandidateListStringGrid Do
+    Begin
+        DistrictNumber := StrToInt(Cells[0, Row]);
+        LastName := TName(Cells[1, Row]);
+        FirstName := TName(Cells[2, Row]);
+        Patronymic := TName(Cells[3, Row]);
+        Party := TPartyName(Cells[4, Row]);
+        Age := StrToInt(Cells[5, Row]);
+        Profession := TProfessionName(Cells[6, Row]);
+    End;
+    GetCandidateDataFromGrid := CandidateData;
+End;
+
+Function GetCandidateDataFromEdits(): TCandidateData;
+Var
+    CandidateData: TCandidateData;
+Begin
+    With CandidateData, ManageCandidateForm Do
+    Begin
+        DistrictNumber := StrToInt(DistrictNumberEdit.Text);
+        LastName := TName(Trim(LastNameEdit.Text));
+        FirstName := TName(Trim(FirstNameEdit.Text));
+        Patronymic := TName(Trim(PatronymicEdit.Text));
+        Party := TPartyName(Trim(PartyEdit.Text));
+        Age := StrToInt(AgeEdit.Text);
+        Profession := TProfessionName(Trim(ProfessionEdit.Text));
+    End;
+    GetCandidateDataFromEdits := CandidateData;
+End;
+
+
+Procedure TManageCandidateForm.CreateParams(Var Params: TCreateParams);
+Begin
+    Inherited;
+    Params.ExStyle := Params.ExStyle Or WS_EX_APPWINDOW;
+End;
+
+Function TManageCandidateForm.FormHelp(Command: Word; Data: NativeInt; Var CallHelp: Boolean): Boolean;
+Begin
+    CallHelp := False;
+    FormHelp := False;
+End;
+
+Procedure TManageCandidateForm.FormKeyDown(Sender: TObject; Var Key: Word; Shift: TShiftState);
+Begin
+    If Key = VK_ESCAPE Then
+        Close;
+End;
+
+Procedure TManageCandidateForm.FormShow(Sender: TObject);
+Begin
+    TitleLabel.Left := (ClientWidth - TitleLabel.Width) Div 2;
+    If StateForm = Edit Then
+        SetCandidateData(ViewCandidateListForm.CandidateListStringGrid);
+End;
+
+
+Function IsFullFields(): Boolean;
+Begin
+    With ManageCandidateForm Do
+        IsFullFields := (Trim(DistrictNumberEdit.Text) <> '') And
+                        (Trim(LastNameEdit.Text) <> '') And
+                        (Trim(FirstNameEdit.Text) <> '') And
+                        (Trim(PartyEdit.Text) <> '') And
+                        (Trim(AgeEdit.Text) <> '') And
+                        (Trim(ProfessionEdit.Text) <> '');
+End;
+
+Procedure TManageCandidateForm.EditChange(Sender: TObject);
+Var
+    CandidateData: TCandidateData;
+Begin
+    ManageButton.Enabled := False;
+    If IsFullFields() Then
+    Begin
+        CandidateData := GetCandidateDataFromEdits();
+        ManageButton.Enabled := Not IsExistCandidate(CandidateList, CandidateData);
+    End;
+End;
+
+Procedure TManageCandidateForm.ControlKeyDown(Sender: TObject; Var Key: Word; Shift: TShiftState);
+Begin
+    If Key = VK_UP Then
+        SelectNext(TWinControl(Sender), False, True)
+    Else If Key = VK_DOWN Then
+        SelectNext(TWinControl(Sender), True, True)
+    Else If (Key = Ord(ENTER)) And (ManageButton.Enabled) Then
+        ManageButtonClick(ManageButton);
+End;
+
+
+Procedure TManageCandidateForm.PositiveNumberEditContextPopup(Sender: TObject; MousePos: TPoint; Var Handled: Boolean);
+Var
+    Edit: TEdit;
+    Max: Integer;
+Begin
+    Edit := TEdit(Sender);
+    If Edit = DistrictNumberEdit Then
+        Max := MAX_DISTRICT_NUMBER
+    Else
+        Max := MAX_AGE;
+    PositiveNumberComponentContextPopup(Edit.Text, Edit.SelStart, Edit.SelLength, Max, Handled);
+End;
+
+Procedure TManageCandidateForm.PositiveNumberEditKeyDown(Sender: TObject; Var Key: Word; Shift: TShiftState);
+Var
+    Edit: TEdit;
+    Max: Integer;
+Begin
+    Edit := TEdit(Sender);
+    If Edit = DistrictNumberEdit Then
+        Max := MAX_DISTRICT_NUMBER
+    Else
+        Max := MAX_AGE;
+    PositiveNumberComponentKeyDown(Edit.Text, Edit.SelStart, Edit.SelLength, Max, Key, Shift);
+    ControlKeyDown(Sender, Key, Shift);
+End;
+
+Procedure TManageCandidateForm.PositiveNumberEditKeyPress(Sender: TObject; Var Key: Char);
+Var
+    Edit: TEdit;
+    Max: Integer;
+Begin
+    Edit := TEdit(Sender);
+    If Edit = DistrictNumberEdit Then
+        Max := MAX_DISTRICT_NUMBER
+    Else
+        Max := MAX_AGE;
+    PositiveNumberComponentKeyPress(Edit.Text, Edit.SelStart, Edit.SelLength, Max, Key);
+End;
+
+Procedure TManageCandidateForm.PositiveNumberEditKeyUp(Sender: TObject; Var Key: Word; Shift: TShiftState);
+Begin
+    PositiveNumberComponentKeyUp();
+End;
+
+
+Procedure TManageCandidateForm.NameEditContextPopup(Sender: TObject; MousePos: TPoint; Var Handled: Boolean);
+Var
+    Edit: TEdit;
+    Max: Integer;
+Begin
+    Edit := TEdit(Sender);
+    If (Edit = LastNameEdit) Or (Edit = FirstNameEdit) Or (Edit = PatronymicEdit) Then
+        Max := MAX_NAME_LENGTH
+    Else If (Edit = PartyEdit) Then
+        Max := MAX_PARTY_NAME_LENGTH
+    Else
+        Max := MAX_PROFESSION_NAME_LENGTH;
+    NameComponentContextPopup(Edit.Text, Edit.SelStart, Edit.SelLength, Max, Handled);
+End;
+
+Procedure TManageCandidateForm.NameEditKeyDown(Sender: TObject; Var Key: Word; Shift: TShiftState);
+Var
+    Edit: TEdit;
+    Max: Integer;
+Begin
+    Edit := TEdit(Sender);
+    If (Edit = LastNameEdit) Or (Edit = FirstNameEdit) Or (Edit = PatronymicEdit) Then
+        Max := MAX_NAME_LENGTH
+    Else If (Edit = PartyEdit) Then
+        Max := MAX_PARTY_NAME_LENGTH
+    Else
+        Max := MAX_PROFESSION_NAME_LENGTH;
+    NameComponentKeyDown(Edit.Text, Edit.SelStart, Edit.SelLength, Max, Key, Shift);
+    ControlKeyDown(Sender, Key, Shift);
+End;
+
+Procedure TManageCandidateForm.NameEditKeyPress(Sender: TObject; Var Key: Char);
+Var
+    Edit: TEdit;
+    Max: Integer;
+Begin
+    Edit := TEdit(Sender);
+    If (Edit = LastNameEdit) Or (Edit = FirstNameEdit) Or (Edit = PatronymicEdit) Then
+        Max := MAX_NAME_LENGTH
+    Else If (Edit = PartyEdit) Then
+        Max := MAX_PARTY_NAME_LENGTH
+    Else
+        Max := MAX_PROFESSION_NAME_LENGTH;
+    NameComponentKeyPress(Edit.Text, Edit.SelStart, Edit.SelLength, Max, Key);
+End;
+
+Procedure TManageCandidateForm.NameEditKeyUp(Sender: TObject; Var Key: Word; Shift: TShiftState);
+Begin
+    NameComponentKeyUp();
+End;
+
+
+Procedure TManageCandidateForm.ManageButtonClick(Sender: TObject);
+Begin
+    If StateForm = Add Then
+        AddCandidate(CandidateList, GetCandidateDataFromEdits())
+    Else
+        EditCandidate(CandidateList, GetCandidateDataFromGrid(), GetCandidateDataFromEdits());
+    IsManaged := True;
+    Close;
+End;
+
+Procedure TManageCandidateForm.CancelButtonClick(Sender: TObject);
+Begin
+    Close;
+End;
+
+End.

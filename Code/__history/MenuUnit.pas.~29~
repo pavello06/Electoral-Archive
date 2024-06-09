@@ -1,0 +1,171 @@
+Unit MenuUnit;
+
+Interface
+
+Uses
+    Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
+    System.Classes, Vcl.Graphics,
+    Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Imaging.pngimage,
+    Vcl.ExtCtrls,
+    ViewCandidateListUnit, BulletinUnit, SearchUnit, CandidateListUnit;
+
+Type
+    TMenuForm = Class(TForm)
+        DeveloperImage: TImage;
+        CandidateListButton: TButton;
+        BulletinButton: TButton;
+        SearchPartyButton: TButton;
+        InfoImage: TImage;
+
+        Function FormHelp(Command: Word; Data: NativeInt; Var CallHelp: Boolean): Boolean;
+        Procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+
+        Procedure DeveloperImageClick(Sender: TObject);
+        Procedure InfoImageClick(Sender: TObject);
+
+        Procedure CandidateListButtonClick(Sender: TObject);
+        Procedure BulletinButtonClick(Sender: TObject);
+        Procedure SearchPartyButtonClick(Sender: TObject);
+
+        Procedure FormCloseQuery(Sender: TObject; Var CanClose: Boolean);
+
+    Private
+        { Private declarations }
+    Public
+        { Public declarations }
+    End;
+
+Var
+    MenuForm: TMenuForm;
+    CandidateList: PCandidate = Nil;
+    IsSaved: Boolean = True;
+
+Implementation
+
+{$R *.dfm}
+
+Function TMenuForm.FormHelp(Command: Word; Data: NativeInt; Var CallHelp: Boolean): Boolean;
+Begin
+    CallHelp := False;
+    FormHelp := False;
+End;
+
+Procedure TMenuForm.FormKeyDown(Sender: TObject; Var Key: Word; Shift: TShiftState);
+Begin
+    If Key = VK_F1 Then
+        InfoImageClick(InfoImage);
+End;
+
+
+Procedure CreateModalForm(CaptionText, LabelText: String; ModalWidth, ModalHeight: Integer);
+Var
+    ModalForm: TForm;
+    ModalLabel: TLabel;
+Begin
+    ModalForm := TForm.Create(Nil);
+    Try
+        ModalForm.BorderIcons := [BiSystemMenu];
+        ModalForm.BorderStyle := BsSingle;
+        ModalForm.Caption := CaptionText;
+        ModalForm.Height := ModalHeight;
+        ModalForm.Icon := MenuForm.Icon;
+        ModalForm.Position := PoScreenCenter;
+        ModalForm.Width := ModalWidth;
+        ModalForm.OnHelp := MenuForm.FormHelp;
+
+        ModalLabel := TLabel.Create(ModalForm);
+        ModalLabel.Caption := LabelText;
+        ModalLabel.Font.Size := 12;
+        ModalLabel.Left := (ModalForm.ClientWidth - ModalLabel.Width) Div 2;
+        ModalLabel.Parent := ModalForm;
+        ModalLabel.Top := (ModalForm.ClientHeight - ModalLabel.Height) Div 2;
+
+        ModalForm.ShowModal;
+    Finally
+        ModalForm.Free;
+    End;
+End;
+
+Procedure TMenuForm.DeveloperImageClick(Sender: TObject);
+Begin
+    CreateModalForm('О разработчике', 'Группа: 351005'#13#10 +
+                                      'Разработчик: Галуха Павел Александрович'#13#10 +
+                                      'Телеграмм: @pavello06', 500, 150);
+End;
+
+Procedure TMenuForm.InfoImageClick(Sender: TObject);
+Begin
+    CreateModalForm('Инструкция',
+                    'Список кандидатов:'#13#10 +
+                    '1. Для добавления кандидата нажмите кнопку "Добавить" или нажмите клавишу Ins.'#13#10 +
+                    '2. Для изменения кандидата нажмите кнопку "Изменить" или нажмите дважды на интересующий ряд.'#13#10 +
+                    '3. Для удаления кандидата нажмите кнопку "Удалить" или нажмите клавишу Del.'#13#10 +
+                    '4. Для получения диапазона для ввода поля наведитесь на него.'#13#10#13#10 +
+                    'Файлы:'#13#10 +
+                    '1. Файл имеет расширение .ea'#13#10#13#10 +
+                    'Поиск:'#13#10 +
+                    'Для использования поиска введите название партии и нажмите кнопку "Найти".',
+                     1000, 450);
+End;
+
+
+Procedure CreateForm(FormClass: TFormClass);
+Var
+    Form: TForm;
+Begin
+    MenuForm.Visible := False;
+    Form := FormClass.Create(Nil);
+    Form.Icon := MenuForm.Icon;
+    Form.ShowModal;
+    MenuForm.Visible := True;
+End;
+
+Procedure TMenuForm.CandidateListButtonClick(Sender: TObject);
+Begin
+    CreateForm(TViewCandidateListForm);
+End;
+
+Procedure TMenuForm.BulletinButtonClick(Sender: TObject);
+Begin
+    If CandidateList = Nil Then
+        Application.MessageBox('Вы ещё не добавили кандидатов!', 'Предупреждение', MB_OK + MB_ICONWARNING)
+    Else
+        CreateForm(TBulletinForm);
+End;
+
+Procedure TMenuForm.SearchPartyButtonClick(Sender: TObject);
+Begin
+    If CandidateList = Nil Then
+        Application.MessageBox('Вы ещё не добавили кандидатов!', 'Предупреждение', MB_OK + MB_ICONWARNING)
+    Else
+        CreateForm(TSearchForm);
+End;
+
+
+Procedure TMenuForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
+Var
+    Confirmation: Integer;
+Begin
+    If IsSaved Then
+    Begin
+        Confirmation := Application.MessageBox('Вы действительно хотите выйти?', 'Выход', MB_YESNO + MB_ICONQUESTION + MB_DEFBUTTON2);
+        CanClose := Confirmation = IDYES;
+    End
+    Else
+    Begin
+        Confirmation := Application.MessageBox('Вы не сохранили файл, хотите ли сохранить файл?', 'Выход', MB_YESNOCANCEl + MB_ICONQUESTION + MB_DEFBUTTON2);
+        Case Confirmation Of
+            mrYes:
+            Begin
+                ViewCandidateListForm.SaveMenuItemClick(Sender);
+                CanClose := IsSaved;
+            End;
+            mrNo:
+                CanClose := True;
+            mrCancel:
+                CanClose := False;
+        End;
+    End;
+End;
+
+End.

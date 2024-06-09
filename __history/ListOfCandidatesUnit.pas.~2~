@@ -1,0 +1,92 @@
+Unit ListOfCandidatesUnit;
+
+Interface
+
+Implementation
+
+Const
+    MAX_NAME_LENGTH = 30;
+    MAX_PARTY_NAME_LENGTH = 50;
+    MAX_PROFESSION_NAME_LENGTH = 50;
+
+Type
+    TStringName = String[MAX_NAME_LENGTH];
+    TStringPartyName = String[MAX_PARTY_NAME_LENGTH];
+    TStringProfessionName = String[MAX_PROFESSION_NAME_LENGTH];
+
+    TData = Record
+        DistrictNumber: Word;
+        LastName: TStringName;
+        FirstName: TStringName;
+        Patronymic: TStringName;
+        Party: TStringPartyName;
+        Age: Byte;
+        Profession: TStringProfessionName;
+    End;
+
+    PCandidate = ^TCandidate;
+    TCandidate = Record
+        Data: TData;
+        Next: PCandidate;
+    End;
+
+
+Function IsEqualCandidates(Data1, Data2: TData) : Boolean;
+Begin
+    IsEqualCandidates := (Data1.DistrictNumber = Data2.DistrictNumber) And
+                         (Data1.LastName = Data2.LastName) And
+                         (Data1.FirstName = Data2.FirstName) And
+                         (Data1.Patronymic = Data2.Patronymic) And
+                         (Data1.Party = Data2.Party) And
+                         (Data1.Age = Data2.Age) And
+                         (Data1.Profession = Data2.Profession);
+End;
+
+Function CreateCandidate(Data: TData) : PCandidate;
+Var
+    Candidate: PCandidate;
+Begin
+    New(Candidate);
+    Candidate^.Data := Data;
+    Candidate^.Next := Nil;
+    CreateCandidate := Candidate;
+End;
+
+Procedure AddCandidate(Var Candidate: PCandidate; Data: TData);
+Var
+    Temp, PrevCandidate, CurrCandidate: PCandidate;
+Begin
+    Temp := CreateCandidate(Data);
+    If (Candidate = Nil) Then
+        Candidate := Temp
+    Else
+    Begin
+        PrevCandidate := Nil;
+        CurrCandidate := Candidate;
+        While (CurrCandidate <> Nil) And (CurrCandidate^.Data.DistrictNumber < Temp^.Data.DistrictNumber) Do
+        Begin
+            PrevCandidate := CurrCandidate;
+            CurrCandidate := CurrCandidate^.Next;
+        End;
+        Temp^.Next := CurrCandidate;
+        PrevCandidate^.Next := Temp;
+    End;
+End;
+
+Procedure DeleteCandidate(Candidate: PCandidate; Data: TData);
+Var
+    PrevCandidate, CurrCandidate: PCandidate;
+Begin
+    PrevCandidate := Nil;
+    CurrCandidate := Candidate;
+    While Not IsEqualCandidates(CurrCandidate^.Data, Data) Do
+    Begin
+        PrevCandidate := CurrCandidate;
+        CurrCandidate := CurrCandidate^.Next;
+    End;
+    PrevCandidate^.Next := CurrCandidate^.Next;
+    Dispose(CurrCandidate);
+End;
+
+
+End.

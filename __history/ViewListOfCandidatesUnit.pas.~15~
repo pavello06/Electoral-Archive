@@ -1,0 +1,88 @@
+Unit ViewListOfCandidatesUnit;
+
+Interface
+
+Uses
+    Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
+    System.Classes, Vcl.Graphics,
+    Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Menus, Vcl.StdCtrls, Vcl.Grids;
+
+Const
+    MIN_DISTRICT_NUMBER = 1;
+    MAX_DISTRICT_NUMBER = 1000;
+    MIN_AGE = 1;
+    MAX_AGE = 100;
+
+Type
+    TViewListOfCandidatesForm = Class(TForm)
+        MainMenu: TMainMenu;
+        FileMenuItem: TMenuItem;
+        OpenMenuItem: TMenuItem;
+        SaveMenuItem: TMenuItem;
+        SeparatorMenuItem: TMenuItem;
+        ExitMenuItem: TMenuItem;
+
+        AddButton: TButton;
+        EditButton: TButton;
+        DeleteButton: TButton;
+        ContentEdit: TEdit;
+        ListOfCandidatesStringGrid: TStringGrid;
+
+        Procedure FormCreate(Sender: TObject);
+        Procedure FormShow(Sender: TObject);
+
+        Procedure AddButtonClick(Sender: TObject);
+        Procedure EditButtonClick(Sender: TObject);
+
+    Private
+        { Private declarations }
+    Public
+        { Public declarations }
+    End;
+
+Var
+    ViewListOfCandidatesForm: TViewListOfCandidatesForm;
+
+Implementation
+
+{$R *.dfm}
+
+Uses
+    MenuUnit,
+    ListOfCandidatesUnit,
+    AddCandidateUnit;
+
+Procedure TViewListOfCandidatesForm.FormCreate(Sender: TObject);
+Begin
+    ListOfCandidatesStringGrid.Cells[0, 0] := '№ округа';
+    ListOfCandidatesStringGrid.Cells[1, 0] := 'Фамилия';
+    ListOfCandidatesStringGrid.Cells[2, 0] := 'Имя';
+    ListOfCandidatesStringGrid.Cells[3, 0] := 'Отчество';
+    ListOfCandidatesStringGrid.Cells[4, 0] := 'Партия';
+    ListOfCandidatesStringGrid.Cells[5, 0] := 'Возраст';
+    ListOfCandidatesStringGrid.Cells[6, 0] := 'Профессия';
+End;
+
+Procedure TViewListOfCandidatesForm.FormShow(Sender: TObject);
+Begin
+    PopulateListOfCandidatesStringGrid(ListOfCandidates, ListOfCandidatesStringGrid);
+End;
+
+
+Procedure TViewListOfCandidatesForm.AddButtonClick(Sender: TObject);
+Begin
+    AddCandidateForm := TAddCandidateForm.Create(Self);
+    AddCandidateForm.Icon := ViewListOfCandidatesForm.Icon;
+    AddCandidateForm.ShowModal;
+End;
+
+Procedure TViewListOfCandidatesForm.EditButtonClick(Sender: TObject);
+Begin
+    AddCandidateForm := TAddCandidateForm.Create(Self);
+    AddCandidateForm.Icon := ViewListOfCandidatesForm.Icon;
+    AddCandidateForm.TitleLabel.Caption := 'Изменение кандидата';
+    AddCandidateForm.AddButton.Caption := 'Изменить';
+    AddCandidateForm.ShowModal;
+End;
+
+End.

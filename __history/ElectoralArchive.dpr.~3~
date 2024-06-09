@@ -1,0 +1,18 @@
+program ElectoralArchive;
+
+uses
+  Vcl.Forms,
+  MenuUnit in 'MenuUnit.pas' {MenuForm},
+  ViewListOfCandidatesUnit in 'ViewListOfCandidatesUnit.pas' {ViewListOfCandidatesForm},
+  AddCandidateUnit in 'AddCandidateUnit.pas' {AddCandidateForm};
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.MainFormOnTaskbar := True;
+  Application.CreateForm(TMenuForm, MenuForm);
+  Application.CreateForm(TViewListOfCandidatesForm, ViewListOfCandidatesForm);
+  Application.CreateForm(TAddCandidateForm, AddCandidateForm);
+  Application.Run;
+end.

@@ -1,0 +1,277 @@
+Unit ViewCandidateListUnit;
+
+Interface
+
+Uses
+    Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
+    System.Classes, Vcl.Graphics,
+    Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Menus, Vcl.StdCtrls, Vcl.Grids,
+    Vcl.ExtDlgs;
+
+Type
+    TViewCandidateListForm = Class(TForm)
+        MainMenu: TMainMenu;
+        FileMenuItem: TMenuItem;
+        OpenMenuItem: TMenuItem;
+        SaveMenuItem: TMenuItem;
+        SeparatorMenuItem: TMenuItem;
+        ExitMenuItem: TMenuItem;
+
+        OpenTextFileDialog: TOpenTextFileDialog;
+        SaveTextFileDialog: TSaveTextFileDialog;
+
+        AddButton: TButton;
+        EditButton: TButton;
+        DeleteButton: TButton;
+        ContentEdit: TEdit;
+        CandidateListStringGrid: TStringGrid;
+
+        Procedure FormCreate(Sender: TObject);
+        Procedure FormShow(Sender: TObject);
+
+        Procedure OpenMenuItemClick(Sender: TObject);
+        Procedure SaveMenuItemClick(Sender: TObject);
+
+        Procedure AddButtonClick(Sender: TObject);
+        Procedure FormKeyDown(Sender: TObject; Var Key: Word; Shift: TShiftState);
+        Procedure EditButtonClick(Sender: TObject);
+        Procedure CandidateListStringGridDblClick(Sender: TObject);
+        Procedure DeleteButtonClick(Sender: TObject);
+        Procedure CandidateListStringGridKeyDown(Sender: TObject; Var Key: Word; Shift: TShiftState);
+
+        Procedure CandidateListStringGridSelectCell(Sender: TObject; ACol, ARow: Integer; Var CanSelect: Boolean);
+
+    Private
+        { Private declarations }
+    Public
+        { Public declarations }
+    End;
+
+Var
+    ViewCandidateListForm: TViewCandidateListForm;
+    IsEdited: Boolean = False;
+    IsSaved: Boolean = False;
+
+Implementation
+
+{$R *.dfm}
+
+Uses
+    MenuUnit,
+    CandidateListUnit,
+    AddCandidateUnit;
+
+Type
+    TCandidateDataFile = File Of TCandidateData;
+
+Procedure TViewCandidateListForm.FormCreate(Sender: TObject);
+Begin
+    With CandidateListStringGrid Do
+    Begin
+        Cells[0, 0] := '№ округа';
+        Cells[1, 0] := 'Фамилия';
+        Cells[2, 0] := 'Имя';
+        Cells[3, 0] := 'Отчество';
+        Cells[4, 0] := 'Партия';
+        Cells[5, 0] := 'Возраст';
+        Cells[6, 0] := 'Профессия';
+    End;
+End;
+
+Procedure TViewCandidateListForm.FormShow(Sender: TObject);
+Begin
+    FillCandidateListStringGrid(CandidateList, CandidateListStringGrid);
+End;
+
+
+Function ReadFileData(Var InputFile: TCandidateDataFile; Var TempCandidateList: PCandidate): Boolean;
+Var
+    IsCorrect: Boolean;
+    TempCandidateData: TCandidateData;
+Begin
+    Reset(InputFile);
+    IsCorrect := True;
+    While IsCorrect And Not EOF(InputFile) Do
+    Begin
+        Try
+            Read(InputFile, TempCandidateData);
+        Except
+            IsCorrect := False;
+        End;
+        If IsCorrect Then
+            AddCandidate(TempCandidateList, TempCandidateData);
+    End;
+    CloseFile(InputFile);
+    ReadFileData := IsCorrect;
+End;
+
+Procedure RecordFileData(CandidateList: PCandidate; Const TempList: PCandidate; CandidateListStringGrid: TStringGrid);
+Begin
+    CandidateList := TempList;
+    FillCandidateListStringGrid(CandidateList, CandidateListStringGrid);
+End;
+
+Procedure TViewCandidateListForm.OpenMenuItemClick(Sender: TObject);
+Var
+    InputFile: TCandidateDataFile;
+    TempCandidateList: PCandidate;
+    IsCorrect: Boolean;
+Begin
+    If OpenTextFileDialog.Execute Then
+    Begin
+        AssignFile(InputFile, OpenTextFileDialog.FileName);
+        TempCandidateList := Nil;
+        IsCorrect := ReadFileData(InputFile, TempCandidateList);
+        If IsCorrect Then
+            RecordFileData(CandidateList, TempCandidateList, CandidateListStringGrid)
+        Else
+            Application.MessageBox('Содержимое файла повреждено!', 'Ошибка', MB_OK + MB_ICONERROR);
+        ClearCandidates(TempCandidateList);
+    End;
+End;
+
+Procedure WriteFileData(Var OutputFile: TCandidateDataFile; Const CandidateList: PCandidate);
+Var
+    CurrCandidate: PCandidate;
+Begin
+    Rewrite(OutputFile);
+    CurrCandidate := CandidateList;
+    While CurrCandidate <> Nil Do
+    Begin
+        Write(OutputFile, CurrCandidate^.CandidateData);
+        CurrCandidate := CurrCandidate^.Next;
+    End;
+    CloseFile(OutputFile);
+End;
+
+Procedure TViewCandidateListForm.SaveMenuItemClick(Sender: TObject);
+Var
+    OutputFile: TCandidateDataFile;
+Begin
+    If SaveTextFileDialog.Execute Then
+    Begin
+        AssignFile(OutputFile, SaveTextFileDialog.FileName);
+        WriteFileData(OutputFile, CandidateList);
+        IsSaved := True;
+    End;
+End;
+
+
+Procedure SetCandidateData();
+Begin
+    With AddCandidateForm, ViewCandidateListForm, CandidateListStringGrid Do
+    Begin
+        DistrictNumberEdit.Text := Cells[0, Row];
+        LastNameEdit.Text := Cells[1, Row];
+        FirstNameEdit.Text := Cells[2, Row];
+        PatronymicEdit.Text := Cells[3, Row];
+        PartyEdit.Text := Cells[4, Row];
+        AgeEdit.Text := Cells[5, Row];
+        ProfessionEdit.Text := Cells[6, Row];
+    End;
+End;
+
+Function GetCandidateData(): TCandidateData;
+Var
+    CandidateData: TCandidateData;
+Begin
+    With CandidateData, ViewCandidateListForm, CandidateListStringGrid Do
+    Begin
+        DistrictNumber := StrToInt(Cells[0, Row]);
+        LastName := TName(Cells[1, Row]);
+        FirstName := TName(Cells[2, Row]);
+        Patronymic := TName(Cells[3, Row]);
+        Party := TParty(Cells[4, Row]);
+        Age := StrToInt(Cells[5, Row]);
+        Profession := TProfession(Cells[6, Row]);
+    End;
+    GetCandidateData := CandidateData;
+End;
+
+
+Procedure TViewCandidateListForm.AddButtonClick(Sender: TObject);
+Begin
+    AddCandidateForm := TAddCandidateForm.Create(Self);
+    AddCandidateForm.Icon := ViewCandidateListForm.Icon;
+    AddCandidateForm.ShowModal;
+    If IsEdited Then
+    Begin
+        FillCandidateListStringGrid(CandidateList, CandidateListStringGrid);
+        IsEdited := False;
+    End;
+End;
+
+Procedure TViewCandidateListForm.FormKeyDown(Sender: TObject; Var Key: Word; Shift: TShiftState);
+Begin
+    If Key = VK_INSERT Then
+        AddButtonClick(AddButton);
+End;
+
+Procedure TViewCandidateListForm.EditButtonClick(Sender: TObject);
+Var
+    CandidateData: TCandidateData;
+Begin
+    If CandidateListStringGrid.Row > 0 Then
+    Begin
+        AddCandidateForm := TAddCandidateForm.Create(Self);
+        AddCandidateForm.Icon := ViewCandidateListForm.Icon;
+        AddCandidateForm.TitleLabel.Caption := 'Изменение кандидата';
+        AddCandidateForm.AddButton.Caption := 'Изменить';
+        SetCandidateData();
+        AddCandidateForm.ShowModal;
+        If (IsEdited) Then
+        Begin
+            CandidateData := GetCandidateData();
+            DeleteCandidate(CandidateList, CandidateData);
+            FillCandidateListStringGrid(CandidateList, CandidateListStringGrid);
+            IsEdited := False;
+        End;
+    End
+    Else
+        Application.MessageBox('Не выбрано редактируемое поле!',
+            'Предупреждение', MB_OK + MB_ICONWARNING);
+End;
+
+Procedure TViewCandidateListForm.CandidateListStringGridDblClick (Sender: TObject);
+Begin
+    EditButtonClick(EditButton);
+End;
+
+Procedure TViewCandidateListForm.DeleteButtonClick(Sender: TObject);
+Var
+    Confirmation: Integer;
+    CandidateData: TCandidateData;
+Begin
+    If CandidateListStringGrid.Row > 0 Then
+    Begin
+        Confirmation := Application.MessageBox
+            ('Вы действительно хотите удалить кандидата?', 'Удаление',
+            MB_YESNO + MB_ICONQUESTION + MB_DEFBUTTON2);
+        If Confirmation = IDYES Then
+        Begin
+            CandidateData := GetCandidateData();
+            DeleteCandidate(CandidateList, CandidateData);
+            FillCandidateListStringGrid(CandidateList, CandidateListStringGrid);
+        End;
+    End
+    Else
+        Application.MessageBox('Не выбрано редактируемое поле!',
+            'Предупреждение', MB_OK + MB_ICONWARNING);
+End;
+
+Procedure TViewCandidateListForm.CandidateListStringGridKeyDown(Sender: TObject; Var Key: Word; Shift: TShiftState);
+Begin
+    If Key = VK_DELETE Then
+        DeleteButtonClick(DeleteButton);
+End;
+
+
+Procedure TViewCandidateListForm.CandidateListStringGridSelectCell(Sender: TObject; ACol, ARow: Integer; Var CanSelect: Boolean);
+Begin
+    If ARow > 0 Then
+        ContentEdit.Text := CandidateListStringGrid.Cells[ACol, ARow]
+    Else
+        ContentEdit.Text := '';
+End;
+
+End.

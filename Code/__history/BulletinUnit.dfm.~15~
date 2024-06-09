@@ -1,0 +1,48 @@
+object BulletinForm: TBulletinForm
+  Left = 0
+  Top = 0
+  BorderIcons = [biSystemMenu, biMinimize]
+  BorderStyle = bsSingle
+  Caption = #1041#1102#1083#1083#1077#1090#1077#1085#1100
+  ClientHeight = 361
+  ClientWidth = 664
+  Color = clBtnFace
+  Constraints.MaxHeight = 399
+  Constraints.MaxWidth = 676
+  Constraints.MinHeight = 399
+  Constraints.MinWidth = 676
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -20
+  Font.Name = 'Segoe UI'
+  Font.Style = []
+  Position = poScreenCenter
+  OnCreate = FormCreate
+  OnHelp = FormHelp
+  OnShow = FormShow
+  TextHeight = 28
+  object BulletinStringGrid: TStringGrid
+    Left = 0
+    Top = 61
+    Width = 664
+    Height = 300
+    Align = alBottom
+    ColCount = 4
+    DefaultColWidth = 160
+    DefaultRowHeight = 30
+    FixedCols = 0
+    Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goFixedRowDefAlign]
+    TabOrder = 0
+    OnSelectCell = BulletinStringGridSelectCell
+    ExplicitTop = 52
+    ExplicitWidth = 658
+  end
+  object ContentEdit: TEdit
+    Left = 0
+    Top = 8
+    Width = 664
+    Height = 36
+    ReadOnly = True
+    TabOrder = 1
+  end
+end

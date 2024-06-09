@@ -1,0 +1,16 @@
+program ElectoralArchive;
+
+uses
+  Vcl.Forms,
+  MenuUnit in 'MenuUnit.pas' {MenuForm},
+  ViewListUnit in 'ViewListUnit.pas' {ViewListForm};
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.MainFormOnTaskbar := True;
+  Application.CreateForm(TMenuForm, MenuForm);
+  Application.CreateForm(TViewListForm, ViewListForm);
+  Application.Run;
+end.

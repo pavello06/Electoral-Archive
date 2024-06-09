@@ -1,0 +1,208 @@
+Unit ViewListOfCandidatesUnit;
+
+Interface
+
+Uses
+    Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
+    System.Classes, Vcl.Graphics,
+    Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Menus, Vcl.StdCtrls, Vcl.Grids;
+
+Const
+    MIN_DISTRICT_NUMBER = 1;
+    MAX_DISTRICT_NUMBER = 1000;
+    MIN_AGE = 1;
+    MAX_AGE = 100;
+
+Type
+    TViewListOfCandidatesForm = Class(TForm)
+        MainMenu: TMainMenu;
+        FileMenuItem: TMenuItem;
+        OpenMenuItem: TMenuItem;
+        SaveMenuItem: TMenuItem;
+        SeparatorMenuItem: TMenuItem;
+        ExitMenuItem: TMenuItem;
+
+        AddButton: TButton;
+        EditButton: TButton;
+        DeleteButton: TButton;
+        ContentEdit: TEdit;
+        ListOfCandidatesStringGrid: TStringGrid;
+
+        Procedure FormCreate(Sender: TObject);
+        Procedure FormShow(Sender: TObject);
+
+        Procedure AddButtonClick(Sender: TObject);
+        Procedure FormKeyDown(Sender: TObject; Var Key: Word;
+            Shift: TShiftState);
+        Procedure EditButtonClick(Sender: TObject);
+        Procedure ListOfCandidatesStringGridDblClick(Sender: TObject);
+        Procedure DeleteButtonClick(Sender: TObject);
+        Procedure ListOfCandidatesStringGridKeyDown(Sender: TObject;
+            Var Key: Word; Shift: TShiftState);
+
+        Procedure ListOfCandidatesStringGridSelectCell(Sender: TObject;
+            ACol, ARow: Integer; Var CanSelect: Boolean);
+
+    Private
+        { Private declarations }
+    Public
+        { Public declarations }
+    End;
+
+Var
+    ViewListOfCandidatesForm: TViewListOfCandidatesForm;
+    IsEdited: Boolean = False;
+
+Implementation
+
+{$R *.dfm}
+
+Uses
+    MenuUnit,
+    ListOfCandidatesUnit,
+    AddCandidateUnit;
+
+Procedure TViewListOfCandidatesForm.FormCreate(Sender: TObject);
+Begin
+    ListOfCandidatesStringGrid.Cells[0, 0] := '№ округа';
+    ListOfCandidatesStringGrid.Cells[1, 0] := 'Фамилия';
+    ListOfCandidatesStringGrid.Cells[2, 0] := 'Имя';
+    ListOfCandidatesStringGrid.Cells[3, 0] := 'Отчество';
+    ListOfCandidatesStringGrid.Cells[4, 0] := 'Партия';
+    ListOfCandidatesStringGrid.Cells[5, 0] := 'Возраст';
+    ListOfCandidatesStringGrid.Cells[6, 0] := 'Профессия';
+End;
+
+Procedure TViewListOfCandidatesForm.FormShow(Sender: TObject);
+Begin
+    MenuForm.Visible := False;
+    PopulateListOfCandidatesStringGrid(ListOfCandidates,
+        ListOfCandidatesStringGrid);
+End;
+
+
+Procedure SetData();
+Begin
+    With AddCandidateForm, ViewListOfCandidatesForm,
+        ListOfCandidatesStringGrid Do
+    Begin
+        DistrictNumberEdit.Text := Cells[0, Row];
+        LastNameEdit.Text := Cells[1, Row];
+        FirstNameEdit.Text := Cells[2, Row];
+        PatronymicEdit.Text := Cells[3, Row];
+        PartyEdit.Text := Cells[4, Row];
+        AgeEdit.Text := Cells[5, Row];
+        ProfessionEdit.Text := Cells[6, Row];
+    End;
+End;
+
+Function GetData(): TData;
+Var
+    Data: TData;
+Begin
+    With ViewListOfCandidatesForm, ListOfCandidatesStringGrid Do
+    Begin
+        Data.DistrictNumber := StrToInt(Cells[0, Row]);
+        Data.LastName := TStringName(Cells[1, Row]);
+        Data.FirstName := TStringName(Cells[2, Row]);
+        Data.Patronymic := TStringName(Cells[3, Row]);
+        Data.Party := TStringPartyName(Cells[4, Row]);
+        Data.Age := StrToInt(Cells[5, Row]);
+        Data.Profession := TStringProfessionName(Cells[6, Row]);
+    End;
+    GetData := Data;
+End;
+
+
+Procedure TViewListOfCandidatesForm.AddButtonClick(Sender: TObject);
+Begin
+    AddCandidateForm := TAddCandidateForm.Create(Self);
+    AddCandidateForm.Icon := ViewListOfCandidatesForm.Icon;
+    AddCandidateForm.ShowModal;
+    If (IsEdited) Then
+    Begin
+        PopulateListOfCandidatesStringGrid(ListOfCandidates,
+            ListOfCandidatesStringGrid);
+        IsEdited := False;
+    End;
+End;
+
+Procedure TViewListOfCandidatesForm.FormKeyDown(Sender: TObject; Var Key: Word;
+    Shift: TShiftState);
+Begin
+    If Key = VK_INSERT Then
+        AddButtonClick(AddButton);
+End;
+
+Procedure TViewListOfCandidatesForm.EditButtonClick(Sender: TObject);
+Var
+    Data: TData;
+Begin
+    If ListOfCandidatesStringGrid.Row > 0 Then
+    Begin
+        AddCandidateForm := TAddCandidateForm.Create(Self);
+        AddCandidateForm.Icon := ViewListOfCandidatesForm.Icon;
+        AddCandidateForm.TitleLabel.Caption := 'Изменение кандидата';
+        AddCandidateForm.AddButton.Caption := 'Изменить';
+        SetData();
+        AddCandidateForm.ShowModal;
+        If (IsEdited) Then
+        Begin
+            Data := GetData();
+            DeleteCandidate(ListOfCandidates, Data);
+            PopulateListOfCandidatesStringGrid(ListOfCandidates,
+                ListOfCandidatesStringGrid);
+            IsEdited := False;
+        End;
+    End
+    Else
+        Application.MessageBox('Не выбрано редактируемое поле!',
+            'Предупреждение', MB_OK + MB_ICONWARNING);
+End;
+
+Procedure TViewListOfCandidatesForm.ListOfCandidatesStringGridDblClick
+    (Sender: TObject);
+Begin
+    EditButtonClick(EditButton);
+End;
+
+Procedure TViewListOfCandidatesForm.DeleteButtonClick(Sender: TObject);
+Var
+    Confirmation: Integer;
+    Data: TData;
+Begin
+    If ListOfCandidatesStringGrid.Row > 0 Then
+    Begin
+        Confirmation := Application.MessageBox
+            ('Вы действительно хотите удалить кандидата?', 'Удаление',
+            MB_YESNO + MB_ICONQUESTION + MB_DEFBUTTON2);
+        If Confirmation = IDYES Then
+        Begin
+            Data := GetData();
+            DeleteCandidate(ListOfCandidates, Data);
+            PopulateListOfCandidatesStringGrid(ListOfCandidates,
+                ListOfCandidatesStringGrid);
+        End;
+    End
+    Else
+        Application.MessageBox('Не выбрано редактируемое поле!',
+            'Предупреждение', MB_OK + MB_ICONWARNING);
+End;
+
+Procedure TViewListOfCandidatesForm.ListOfCandidatesStringGridKeyDown
+    (Sender: TObject; Var Key: Word; Shift: TShiftState);
+Begin
+    DeleteButtonClick(DeleteButton);
+End;
+
+
+Procedure TViewListOfCandidatesForm.ListOfCandidatesStringGridSelectCell
+    (Sender: TObject; ACol, ARow: Integer; Var CanSelect: Boolean);
+Begin
+    If ARow > 0 Then
+        ContentEdit.Text := ListOfCandidatesStringGrid.Cells[ACol, ARow]
+    Else
+        ContentEdit.Text := '';
+End;
+
+End.

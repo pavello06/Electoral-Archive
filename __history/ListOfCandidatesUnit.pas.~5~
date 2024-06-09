@@ -1,0 +1,152 @@
+Unit ListOfCandidatesUnit;
+
+Interface
+
+Uses
+    Vcl.Grids;
+
+Const
+    MAX_NAME_LENGTH = 30;
+    MAX_PARTY_NAME_LENGTH = 50;
+    MAX_PROFESSION_NAME_LENGTH = 50;
+
+Type
+    TStringName = String[MAX_NAME_LENGTH];
+    TStringPartyName = String[MAX_PARTY_NAME_LENGTH];
+    TStringProfessionName = String[MAX_PROFESSION_NAME_LENGTH];
+
+    TData = Record
+        DistrictNumber: Word;
+        LastName: TStringName;
+        FirstName: TStringName;
+        Patronymic: TStringName;
+        Party: TStringPartyName;
+        Age: Byte;
+        Profession: TStringProfessionName;
+    End;
+
+    PCandidate = ^TCandidate;
+    TCandidate = Record
+        Data: TData;
+        Next: PCandidate;
+    End;
+
+Function IsExistCandidate(Candidate: PCandidate; Data: TData) : Boolean;
+Procedure AddCandidate(Var Candidate: PCandidate; Data: TData);
+Procedure DeleteCandidate(Var Candidate: PCandidate; Data: TData);
+
+Implementation
+
+Uses
+    System.SysUtils;
+
+Function IsEqualCandidates(Data1, Data2: TData) : Boolean;
+Begin
+    IsEqualCandidates := (Data1.DistrictNumber = Data2.DistrictNumber) And
+                         (Data1.LastName = Data2.LastName) And
+                         (Data1.FirstName = Data2.FirstName) And
+                         (Data1.Patronymic = Data2.Patronymic) And
+                         (Data1.Party = Data2.Party) And
+                         (Data1.Age = Data2.Age) And
+                         (Data1.Profession = Data2.Profession);
+End;
+
+Function IsExistCandidate(Candidate: PCandidate; Data: TData) : Boolean;
+Var
+    CurrCandidate: PCandidate;
+    IsExist: Boolean;
+Begin
+    CurrCandidate := Candidate;
+    IsExist := True;
+    While IsExist And (CurrCandidate <> Nil) Do
+        IsExist := IsEqualCandidates(CurrCandidate^.Data, Data);
+    IsExistCandidate := IsExist;
+End;
+
+Function CreateCandidate(Data: TData) : PCandidate;
+Var
+    Candidate: PCandidate;
+Begin
+    New(Candidate);
+    Candidate^.Data := Data;
+    Candidate^.Next := Nil;
+    CreateCandidate := Candidate;
+End;
+
+Procedure AddCandidate(Var Candidate: PCandidate; Data: TData);
+Var
+    Temp, PrevCandidate, CurrCandidate: PCandidate;
+Begin
+    Temp := CreateCandidate(Data);
+    If (Candidate = Nil) Then
+        Candidate := Temp
+    Else
+    Begin
+        PrevCandidate := Nil;
+        CurrCandidate := Candidate;
+        While (CurrCandidate <> Nil) And (CurrCandidate^.Data.DistrictNumber < Temp^.Data.DistrictNumber) Do
+        Begin
+            PrevCandidate := CurrCandidate;
+            CurrCandidate := CurrCandidate^.Next;
+        End;
+        Temp^.Next := CurrCandidate;
+        PrevCandidate^.Next := Temp;
+    End;
+End;
+
+Procedure DeleteCandidate(Var Candidate: PCandidate; Data: TData);
+Var
+    PrevCandidate, CurrCandidate: PCandidate;
+Begin
+    PrevCandidate := Nil;
+    CurrCandidate := Candidate;
+    While (Not IsEqualCandidates(CurrCandidate^.Data, Data)) Do
+    Begin
+        PrevCandidate := CurrCandidate;
+        CurrCandidate := CurrCandidate^.Next;
+    End;
+    If (PrevCandidate = Nil) Then
+        Candidate := CurrCandidate^.Next
+    Else
+        PrevCandidate^.Next := CurrCandidate^.Next;
+    Dispose(CurrCandidate);
+End;
+
+Procedure ClearCandidates(Var Candidate: PCandidate);
+Var
+    CurrCandidate, NextCandidate: PCandidate;
+Begin
+    CurrCandidate := Candidate;
+    While (CurrCandidate <> Nil) Do
+    Begin
+        NextCandidate := CurrCandidate^.Next;
+        Dispose(CurrCandidate);
+        CurrCandidate := NextCandidate;
+    End;
+    Candidate := Nil;
+End;
+
+Procedure PopulateStringGrid(CandidateList: PCandidate; StringGrid: TStringGrid);
+Var
+    CurrCandidate: PCandidate;
+    Row: Word;
+Begin
+    StringGrid.RowCount := 1;
+    CurrCandidate := CandidateList;
+    Row := 1;
+    While (CurrCandidate <> Nil) Do
+    Begin
+        StringGrid.RowCount := Row + 1;
+        StringGrid.Cells[0, Row] := IntToStr(CurrCandidate^.Data.DistrictNumber);
+        StringGrid.Cells[1, Row] := CurrCandidate^.Data.LastName;
+        StringGrid.Cells[2, Row] := CurrCandidate^.Data.FirstName;
+        StringGrid.Cells[3, Row] := CurrCandidate^.Data.Patronymic;
+        StringGrid.Cells[4, Row] := CurrCandidate^.Data.Party;
+        StringGrid.Cells[5, Row] := IntToStr(CurrCandidate^.Data.Age);
+        StringGrid.Cells[6, Row] := CurrCandidate^.Data.Profession;
+        CurrCandidate := CurrCandidate^.Next;
+        Inc(Row);
+    End;
+End;
+
+End.

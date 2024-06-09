@@ -1,0 +1,53 @@
+Unit BulletinUnit;
+
+Interface
+
+Uses
+    Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
+    System.Classes, Vcl.Graphics,
+    Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Grids, Vcl.StdCtrls;
+
+Type
+    TBulletinForm = Class(TForm)
+        ContentEdit: TEdit;
+        BulletinStringGrid: TStringGrid;
+        Procedure FormCreate(Sender: TObject);
+    procedure FormShow(Sender: TObject);
+
+    Private
+        { Private declarations }
+    Public
+        { Public declarations }
+    End;
+
+Var
+    BulletinForm: TBulletinForm;
+
+Implementation
+
+{$R *.dfm}
+
+Uses
+    MenuUnit;
+
+Procedure TBulletinForm.FormCreate(Sender: TObject);
+Begin
+    With BulletinStringGrid Do
+    Begin
+        Cells[0, 0] := 'Партия';
+        Cells[1, 0] := 'Заявления';
+        Cells[2, 0] := 'Возраст';
+        Cells[3, 0] := 'Профессия';
+    End;
+End;
+
+
+
+
+
+procedure TBulletinForm.FormShow(Sender: TObject);
+begin
+    FillBulletinStringGrid(CandidateList, BulletinStringGrid);
+end;
+
+End.

@@ -1,0 +1,21 @@
+program ElectoralArchive;
+
+uses
+  Vcl.Forms,
+  MenuUnit in 'MenuUnit.pas' {MenuForm},
+  ViewListOfCandidatesUnit in 'ViewListOfCandidatesUnit.pas' {ViewListOfCandidatesForm},
+  AddCandidateUnit in 'AddCandidateUnit.pas' {AddCandidateForm},
+  Vcl.Themes,
+  Vcl.Styles;
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.MainFormOnTaskbar := True;
+  TStyleManager.TrySetStyle('Carbon');
+  Application.CreateForm(TMenuForm, MenuForm);
+  Application.CreateForm(TViewListOfCandidatesForm, ViewListOfCandidatesForm);
+  Application.CreateForm(TAddCandidateForm, AddCandidateForm);
+  Application.Run;
+end.

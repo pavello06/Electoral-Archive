@@ -1,0 +1,129 @@
+Unit PartyListUnit;
+
+Interface
+
+Uses
+    System.SysUtils, Vcl.Grids,
+    CandidateListUnit,
+    ProfessionListUnit;
+
+Type
+    TApplicationCount = Integer;
+    TAge = Integer;
+
+    TPartyData = Record
+        PartyName: TPartyName;
+        ApplicationCount: TApplicationCount;
+        Age: TAge;
+        ProfessionList: PProfession;
+    End;
+
+    PParty = ^TParty;
+    TParty = Record
+        Data: TPartyData;
+        Next: PParty;
+    End;
+
+Procedure FillBulletinStringGrid(CandidateList: PCandidate; BulletinStringGrid: TStringGrid);
+
+Implementation
+
+Function CreateParty(CandidateData: TCandidateData) : PParty;
+Var
+    Party: PParty;
+Begin
+    New(Party);
+    Party.Data.PartyName := CandidateData.Party;
+    Party.Data.ApplicationCount := 1;
+    Party.Data.Age := CandidateData.Age;
+    AddProfession(Party.Data.ProfessionList, CandidateData.Profession);
+    Party.Next := Nil;
+    CreateParty := Party;
+End;
+
+Procedure AddParty(Var PartyList: PParty; CandidateData: TCandidateData);
+Var
+    TempParty, PrevParty, CurrParty: PParty;
+Begin
+    PrevParty := Nil;
+    CurrParty := PartyList;
+    While (CurrParty <> Nil) And (CurrParty^.Data.PartyName <> CandidateData.Party) Do
+    Begin
+        PrevParty := CurrParty;
+        CurrParty := CurrParty^.Next;
+    End;
+
+    If (CurrParty <> Nil) And (CurrParty^.Data.PartyName = CandidateData.Party) Then
+    Begin
+        Inc(CurrParty.Data.Age, CandidateData.Age);
+        AddProfession(CurrParty.Data.ProfessionList, CandidateData.Profession);
+    End
+    Else If PrevParty = Nil Then
+    Begin
+        TempParty := CreateParty(CandidateData);
+        PartyList := TempParty;
+    End
+    Else
+    Begin
+        TempParty := CreateParty(CandidateData);
+        PrevParty^.Next := TempParty;
+    End;
+
+End;
+
+Procedure ClearParties(Var PartyList: PParty);
+Var
+    CurrParty, NextParty: PParty;
+Begin
+    CurrParty := PartyList;
+    While CurrParty <> Nil Do
+    Begin
+        ClearProfessions(CurrParty.Data.ProfessionList);
+        NextParty := CurrParty^.Next;
+        Dispose(CurrParty);
+        CurrParty := NextParty;
+    End;
+    PartyList := Nil;
+End;
+
+Function CreatePartyList(CandidateList: PCandidate) : PParty;
+Var
+    CurrCandidate: PCandidate;
+    PartyList: PParty;
+Begin
+    CurrCandidate := CandidateList;
+    PartyList := Nil;
+    While CurrCandidate <> Nil Do
+    Begin
+        AddParty(PartyList, CurrCandidate^.Data);
+        CurrCandidate := CurrCandidate^.Next;
+    End;
+    CreatePartyList := PartyList;
+End;
+
+Procedure FillBulletinStringGrid(CandidateList: PCandidate; BulletinStringGrid: TStringGrid);
+Var
+    PartyList: PParty;
+    CurrParty: PParty;
+    Row: Integer;
+Begin
+    PartyList := CreatePartyList(CandidateList);
+    BulletinStringGrid.RowCount := 1;
+    CurrParty := PartyList;
+    Row := 1;
+    While CurrParty <> Nil Do
+    Begin
+        With CurrParty^.Data Do
+        Begin
+            BulletinStringGrid.RowCount := Row + 1;
+            BulletinStringGrid.Cells[0, Row] := String(PartyName);
+            BulletinStringGrid.Cells[1, Row] := IntToStr(ApplicationCount);
+            BulletinStringGrid.Cells[2, Row] := IntToStr(Age Div ApplicationCount);
+            BulletinStringGrid.Cells[3, Row] := String(FindPopularProfession(ProfessionList));
+            CurrParty := CurrParty^.Next;
+        End;
+        Inc(Row);
+    End;
+End;
+
+End.

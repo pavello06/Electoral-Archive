@@ -1,0 +1,93 @@
+Unit ProfessionListUnit;
+
+Interface
+
+Uses
+    CandidateListUnit;
+
+Type
+    TProfessionData = Record
+        ProfessionName: TProfessionName;
+        Count: Integer;
+    End;
+
+    PProfession = ^TProfession;
+    TProfession = Record
+        Data: TProfessionData;
+        Next: PProfession;
+    End;
+
+Procedure AddProfession(Var ProfessionList: PProfession; ProfessionName: TProfessionName);
+Procedure ClearProfessions(ProfessionList: PProfession);
+Function FindPopularProfession(ProfessionList: PProfession) : TProfessionName;
+
+Implementation
+
+Function CreateProfession(ProfessionName: TProfessionName) : PProfession;
+Var
+    Profession: PProfession;
+Begin
+    New(Profession);
+    Profession.Data.ProfessionName := ProfessionName;
+    Profession.Data.Count := 1;
+    Profession.Next := Nil;
+    CreateProfession := Profession;
+End;
+
+Procedure AddProfession(Var ProfessionList: PProfession; ProfessionName: TProfessionName);
+Var
+    TempProfession, PrevProfession, CurrProfession: PProfession;
+Begin
+    PrevProfession := Nil;
+    CurrProfession := ProfessionList;
+    While (CurrProfession <> Nil) And (CurrProfession^.Data.ProfessionName = ProfessionName) Do
+    Begin
+        PrevProfession := CurrProfession;
+        CurrProfession := CurrProfession^.Next;
+    End;
+
+    If PrevProfession = Nil Then
+    Begin
+        TempProfession := CreateProfession(ProfessionName);
+        ProfessionList := TempProfession;
+    End
+    Else If CurrProfession = Nil Then
+    Begin
+        TempProfession := CreateProfession(ProfessionName);
+        PrevProfession^.Next := TempProfession;
+    End
+    Else
+        Inc(CurrProfession.Data.Count);
+End;
+
+Procedure ClearProfessions(Var ProfessionList: PProfession);
+Var
+    CurrProfession, NextProfession: PProfession;
+Begin
+    CurrProfession := ProfessionList;
+    While CurrProfession <> Nil Do
+    Begin
+        NextProfession := CurrProfession^.Next;
+        Dispose(CurrProfession);
+        CurrProfession := NextProfession;
+    End;
+    ProfessionList := Nil;
+End;
+
+Function FindPopularProfession(ProfessionList: PProfession) : TProfessionName;
+Var
+    CurrProfession: PProfession;
+    PopularProfessionData: TProfessionData;
+Begin
+    CurrProfession := ProfessionList;
+    PopularProfessionData := CurrProfession^.Data;
+    While CurrProfession <> Nil Do
+    Begin
+        If PopularProfessionData.Count < CurrProfession^.Data.Count Then
+            PopularProfessionData := CurrProfession^.Data;
+        CurrProfession := CurrProfession^.Next;
+    End;
+    FindPopularProfession := PopularProfessionData.ProfessionName;
+End;
+
+End.

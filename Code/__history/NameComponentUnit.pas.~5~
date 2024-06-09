@@ -1,0 +1,96 @@
+Unit NameComponentUnit;
+
+Interface
+
+Uses
+    Winapi.Windows, System.SysUtils, System.Classes, Clipbrd;
+
+Const
+    ENTER = #13;
+    BACKSPACE = #8;
+    NONE = #0;
+    ALPHABET = ['A' .. 'Z', 'a' .. 'z', 'À' .. 'ß', 'à' .. 'ÿ'];
+
+Var
+    CtrlPressed: Boolean = False;
+
+Procedure NameComponentContextPopup(Const Text: String; Const SelStart, SelLength, MAX: Integer; Var Handled: Boolean);
+Procedure NameComponentKeyDown(Const Text: String; Const SelStart, SelLength, MAX: Integer; Var Key: Word; Shift: TShiftState);
+Procedure NameComponentKeyPress(Const Text: String; Const SelStart, SelLength, MAX: Integer; Var Key: Char);
+Procedure NameComponentKeyUp();
+
+Implementation
+
+Function IsValidRange(Num: Integer; Const MAX: Integer): Boolean;
+Begin
+    IsValidRange := Num <= MAX;
+End;
+
+Function IsValidChar(Key: Char): Boolean;
+Begin
+    IsValidChar := CharInSet(Key, ALPHABET);
+End;
+
+Function IsValidChars(Const Text: String) : Boolean;
+Var
+    IsValid: Boolean;
+    I: Integer;
+Begin
+    IsValid := True;
+    I := 1;
+    While IsValid And (I <= Length(Text)) Do
+    Begin
+        IsValid := IsValidChar(Text[I]);
+        Inc(I);
+    End;
+    IsValidChars := IsValid;
+End;
+
+Function IsPossiblePaste(Const Text: String; Const SelStart, SelLength, MAX: Integer): Boolean;
+Begin
+    IsPossiblePaste := Clipboard.HasFormat(CF_TEXT) And
+                       (Length(Clipboard.AsText) <> 0) And
+                       IsValidChars(Clipboard.AsText) And
+                       IsValidRange(Length(Copy(Text, 1, SelStart) + Clipboard.AsText + Copy(Text, SelStart + SelLength + 1)), MAX);
+End;
+
+
+Procedure NameComponentExit(Text: String; Const MIN: Integer);
+Begin
+    If Length(Text) < MIN Then 
+        Text := '';
+End;
+
+Procedure NameComponentContextPopup(Const Text: String; Const SelStart, SelLength, MAX: Integer; Var Handled: Boolean);
+Begin
+    If Not IsPossiblePaste(Text, SelStart, SelLength, MAX) Then
+        Handled := True;
+End;
+
+Procedure NameComponentKeyDown(Const Text: String; Const SelStart, SelLength, MAX: Integer; Var Key: Word; Shift: TShiftState);
+Begin
+    If (Shift = [ssCtrl]) And (UpCase(Chr(Key)) = 'V') Or
+       (Shift = [ssShift]) And (Key = VK_INSERT) Then
+    Begin
+        If Not IsPossiblePaste(Text, SelStart, SelLength, MAX) Then
+            Key := Ord(NONE);
+    End;
+    If (Shift = [ssCtrl]) And CharInSet(Chr(Key), ALPHABET) Then
+        CtrlPressed := True;
+End;
+
+Procedure NameComponentKeyPress(Const Text: String; Const SelStart, SelLength, MAX: Integer; Var Key: Char);
+Begin
+    If Not CtrlPressed And (Key <> BACKSPACE) Then
+    Begin
+        If Not(IsValidChar(Key) And IsValidRange(Length(Copy(Text, 1, SelStart) + Key + Copy(Text, SelStart + SelLength + 1)), MAX)) Then
+            Key := NONE;
+    End;
+End;
+
+Procedure NameComponentKeyUp();
+Begin
+    CtrlPressed := False;
+End;
+
+End.

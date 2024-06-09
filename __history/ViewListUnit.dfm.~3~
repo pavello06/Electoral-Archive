@@ -1,0 +1,38 @@
+object ViewListForm: TViewListForm
+  Left = 0
+  Top = 0
+  BorderIcons = [biSystemMenu, biMinimize]
+  BorderStyle = bsSingle
+  Caption = 'ViewListForm'
+  ClientHeight = 515
+  ClientWidth = 898
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -12
+  Font.Name = 'Segoe UI'
+  Font.Style = []
+  Menu = MainMenu
+  TextHeight = 15
+  object MainMenu: TMainMenu
+    Left = 8
+    Top = 16
+    object FileMenuItem: TMenuItem
+      Caption = #1060#1072#1081#1083
+      object OpenMenuItem: TMenuItem
+        Caption = #1054#1090#1082#1088#1099#1090#1100
+        ShortCut = 16463
+      end
+      object SaveMenuItem: TMenuItem
+        Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100
+        ShortCut = 16467
+      end
+      object SeparatorMenuItem: TMenuItem
+        Caption = '-'
+      end
+      object ExitMenuItem: TMenuItem
+        Caption = #1042#1099#1081#1090#1080
+      end
+    end
+  end
+end

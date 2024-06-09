@@ -1,0 +1,139 @@
+Unit ViewListOfCandidatesUnit;
+
+Interface
+
+Uses
+    Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
+    System.Classes, Vcl.Graphics,
+    Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Menus, Vcl.StdCtrls, Vcl.Grids,
+    ListOfCandidatesUnit;
+
+Const
+    MIN_DISTRICT_NUMBER = 1;
+    MAX_DISTRICT_NUMBER = 1000;
+    MIN_AGE = 1;
+    MAX_AGE = 100;
+
+Type
+    TViewListOfCandidatesForm = Class(TForm)
+        MainMenu: TMainMenu;
+        FileMenuItem: TMenuItem;
+        OpenMenuItem: TMenuItem;
+        SaveMenuItem: TMenuItem;
+        SeparatorMenuItem: TMenuItem;
+        ExitMenuItem: TMenuItem;
+
+        AddButton: TButton;
+        EditButton: TButton;
+        DeleteButton: TButton;
+        ContentEdit: TEdit;
+        ListOfCandidatesStringGrid: TStringGrid;
+
+        Procedure FormCreate(Sender: TObject);
+        Procedure FormShow(Sender: TObject);
+
+        Function GetData() : TData;
+        Procedure SetData();
+
+        Procedure AddButtonClick(Sender: TObject);
+        Procedure EditButtonClick(Sender: TObject);
+
+    Private
+        { Private declarations }
+    Public
+        { Public declarations }
+    End;
+
+Var
+    ViewListOfCandidatesForm: TViewListOfCandidatesForm;
+    IsEdited: Boolean = False;
+
+Implementation
+
+{$R *.dfm}
+
+Uses
+    MenuUnit,
+    AddCandidateUnit;
+
+Procedure TViewListOfCandidatesForm.FormCreate(Sender: TObject);
+Begin
+    ListOfCandidatesStringGrid.Cells[0, 0] := '№ округа';
+    ListOfCandidatesStringGrid.Cells[1, 0] := 'Фамилия';
+    ListOfCandidatesStringGrid.Cells[2, 0] := 'Имя';
+    ListOfCandidatesStringGrid.Cells[3, 0] := 'Отчество';
+    ListOfCandidatesStringGrid.Cells[4, 0] := 'Партия';
+    ListOfCandidatesStringGrid.Cells[5, 0] := 'Возраст';
+    ListOfCandidatesStringGrid.Cells[6, 0] := 'Профессия';
+End;
+
+Procedure TViewListOfCandidatesForm.FormShow(Sender: TObject);
+Begin
+    PopulateListOfCandidatesStringGrid(ListOfCandidates, ListOfCandidatesStringGrid);
+End;
+
+
+Procedure TViewListOfCandidatesForm.SetData();
+Begin
+    With AddCandidateForm, ViewListOfCandidatesForm, ListOfCandidatesStringGrid Do
+    Begin
+        DistrictNumberEdit.Text := Cells[0, Row];
+        LastNameEdit.Text := Cells[1, Row];
+        FirstNameEdit.Text := Cells[2, Row];
+        PatronymicEdit.Text := Cells[3, Row];
+        PartyEdit.Text := Cells[4, Row];
+        AgeEdit.Text := Cells[5, Row];
+        ProfessionEdit.Text := Cells[6, Row];
+    End;
+End;
+
+Function TViewListOfCandidatesForm.GetData() : TData;
+Var
+    Data: TData;
+Begin
+    With AddCandidateForm Do
+    Begin
+        Data.DistrictNumber := StrToInt(DistrictNumberEdit.Text);
+        Data.LastName := TStringName(LastNameEdit.Text);
+        Data.FirstName := TStringName(FirstNameEdit.Text);
+        Data.Patronymic := TStringName(PatronymicEdit.Text);
+        Data.Party := TStringPartyName(PartyEdit.Text);
+        Data.Age := StrToInt(AgeEdit.Text);
+        Data.Profession := TStringProfessionName(ProfessionEdit.Text);
+    End;
+    GetData := Data;
+End;
+
+
+Procedure TViewListOfCandidatesForm.AddButtonClick(Sender: TObject);
+Begin
+    AddCandidateForm := TAddCandidateForm.Create(Self);
+    AddCandidateForm.Icon := ViewListOfCandidatesForm.Icon;
+    AddCandidateForm.ShowModal;
+    If (IsEdited) Then
+    Begin
+        PopulateListOfCandidatesStringGrid(ListOfCandidates, ListOfCandidatesStringGrid);
+        IsEdited := False;
+    End;
+End;
+
+Procedure TViewListOfCandidatesForm.EditButtonClick(Sender: TObject);
+Var
+    Data: TData;
+Begin
+    AddCandidateForm := TAddCandidateForm.Create(Self);
+    AddCandidateForm.Icon := ViewListOfCandidatesForm.Icon;
+    AddCandidateForm.TitleLabel.Caption := 'Изменение кандидата';
+    AddCandidateForm.AddButton.Caption := 'Изменить';
+    SetData();
+    Data := GetData();
+    AddCandidateForm.ShowModal;
+    If (IsEdited) Then
+    Begin
+        DeleteCandidate(ListOfCandidates, Data);
+        PopulateListOfCandidatesStringGrid(ListOfCandidates, ListOfCandidatesStringGrid);
+        IsEdited := False;
+    End;
+End;
+
+End.

@@ -1,0 +1,83 @@
+Unit BulletinUnit;
+
+Interface
+
+Uses
+    Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
+    System.Classes, Vcl.Graphics,
+    Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Grids, Vcl.StdCtrls;
+
+Type
+    TBulletinForm = Class(TForm)
+        ContentEdit: TEdit;
+        BulletinStringGrid: TStringGrid;
+
+        Procedure CreateParams(Var Params: TCreateParams); Override;
+        Procedure FormCreate(Sender: TObject);
+        Function FormHelp(Command: Word; Data: NativeInt; Var CallHelp: Boolean): Boolean;
+        Procedure FormKeyDown(Sender: TObject; Var Key: Word; Shift: TShiftState);
+        Procedure FormShow(Sender: TObject);
+
+        Procedure BulletinStringGridSelectCell(Sender: TObject; ACol, ARow: Integer; Var CanSelect: Boolean);
+
+    Private
+        { Private declarations }
+    Public
+        { Public declarations }
+    End;
+
+Var
+    BulletinForm: TBulletinForm;
+
+Implementation
+
+{$R *.dfm}
+
+Uses
+    MenuUnit,
+    PartyListUnit;
+
+Procedure TBulletinForm.FormCreate(Sender: TObject);
+Begin
+    With BulletinStringGrid Do
+    Begin
+        Cells[0, 0] := 'Партия';
+        Cells[1, 0] := 'Заявления';
+        Cells[2, 0] := 'Возраст';
+        Cells[3, 0] := 'Профессия';
+    End;
+End;
+
+Procedure TBulletinForm.CreateParams(Var Params: TCreateParams);
+Begin
+    Inherited;
+    Params.ExStyle := Params.ExStyle Or WS_EX_APPWINDOW;
+End;
+
+Function TBulletinForm.FormHelp(Command: Word; Data: NativeInt; Var CallHelp: Boolean): Boolean;
+Begin
+    CallHelp := False;
+    FormHelp := False;
+End;
+
+Procedure TBulletinForm.FormKeyDown(Sender: TObject; Var Key: Word; Shift: TShiftState);
+Begin
+    If Key = VK_ESCAPE Then
+        Close;
+End;
+
+Procedure TBulletinForm.FormShow(Sender: TObject);
+Begin
+    FillBulletinStringGrid(CandidateList, BulletinStringGrid);
+End;
+
+
+Procedure TBulletinForm.BulletinStringGridSelectCell(Sender: TObject; ACol, ARow: Integer; Var CanSelect: Boolean);
+Begin
+    If ARow > 0 Then
+        ContentEdit.Text := BulletinStringGrid.Cells[ACol, ARow]
+    Else
+        ContentEdit.Text := '';
+End;
+
+End.
